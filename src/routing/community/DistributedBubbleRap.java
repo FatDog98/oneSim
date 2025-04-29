@@ -263,7 +263,7 @@ public class DistributedBubbleRap implements RoutingDecisionEngine, CommunityDet
 	}
 
 	public ArrayList<Integer> getGlobalPopularity() {
-		return this.centrality.getGlobalPopularity(connHistory);
+		return this.centrality.getGlobalCentrality(connHistory);
 	}
 
 	private DistributedBubbleRap getOtherDecisionEngine(DTNHost h)

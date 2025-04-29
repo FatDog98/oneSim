@@ -74,24 +74,21 @@ public class CWindowCentrality implements Centrality
 	protected static int COMPUTE_INTERVAL = 600; // seconds, i.e. 10 minutes
 	/** Width of each time interval in which to count the node's degree */
 	protected static int CENTRALITY_TIME_WINDOW = 21600; // 6 hours
-//	protected static int CENTRALITY_TIME_WINDOW = 86400; // 6 hours
-
 	/** Number of time intervals to average the node's degree over */
 	protected static int EPOCH_COUNT = 787; // CHANGED FROM 5,48;
+	
 	/** Saved global centrality from last computation */
 	protected double globalCentrality;
 	/** Saved local centrality from last computation */
 	protected double localCentrality;
-
+	
 	/** timestamp of last global centrality computation */
 	protected int lastGlobalComputationTime;
-	/** timestamp of last local centrality computation */
+	/** timestamp of last local centrality computation */ 
 	protected int lastLocalComputationTime;
 
-//	protected ArrayList<Integer> popularity;
-	protected static int REPORT_TIME_WINDOW = 21600;
-//	private Map<Integer, Set<DTNHost>> nodesCountedInEpoch;
-
+	protected int[] array;
+	
 	public CWindowCentrality(Settings s) 
 	{
 		if(s.contains(CENTRALITY_WINDOW_SETTING))
@@ -125,12 +122,13 @@ public class CWindowCentrality implements Centrality
 
 		for(int i = 0; i < EPOCH_COUNT; i++)
 			nodesCountedInEpoch.put(i, new HashSet<DTNHost>());
-		
+
 		/*
 		 * For each node, loop through connection history until we crossed all
 		 * the epochs we need to cover
 		 */
 		int epochControl=0;
+		array = centralities;
 		for(Map.Entry<DTNHost, List<Duration>> entry : connHistory.entrySet())
 		{
 			DTNHost h = entry.getKey();
@@ -178,7 +176,7 @@ public class CWindowCentrality implements Centrality
 
 		// compute and return average node degree
 		int control = 0, sum = 0;
-		for(int i = 0; i < epochControl+1; i++){ // CHANGE FROM for(int i = 0; i < EPOCH_COUNT; i++){
+		for(int i = 0; i < epochControl+1; i++){ // CHANGE FROM for(int i = 0; i < EPOCH_COUNT; i++){ 
 //			System.out.println("centralities["+i+"]: "+centralities[i]);
 			sum += centralities[i];
 			control++;
@@ -192,6 +190,11 @@ public class CWindowCentrality implements Centrality
 		
 		return this.globalCentrality;
 	}
+
+	public int[] getGlobal(Map<DTNHost, List<Duration>> connHistory){
+		return array;
+	}
+
 
 	public double getLocalCentrality(Map<DTNHost, List<Duration>> connHistory,
 			CommunityDetection cd)
@@ -273,171 +276,4 @@ public class CWindowCentrality implements Centrality
 		return new CWindowCentrality(this);
 	}
 
-//	public ArrayList<Integer> getGlobalPopularity(Map<DTNHost, List<Duration>> connHistory) {
-//		ArrayList<Integer> popularity = new ArrayList<>();
-//		for (Map.Entry<DTNHost, List<Duration>> entry : connHistory.entrySet()) {
-//			int temp = 0;
-//			int modulo = 0;
-//			for (Duration d : entry.getValue()) {
-//				modulo = (int) d.start % REPORT_TIME_WINDOW;
-//
-//				for (int i = popularity.size(); i <= modulo; i++) {
-//					popularity.add(0);
-//				}
-//
-//				if (popularity.size() == modulo) {
-//					++temp;
-//				}
-//			}
-//			popularity.add(modulo, temp);
-//		}
-//		return popularity;
-//	}
-
-	public ArrayList<Integer> getGlobalPopularity(Map<DTNHost, List<Duration>> connHistory)
-	{
-		int nrOfEpochs = (int) SimScenario.getInstance().getEndTime() / REPORT_TIME_WINDOW;
-		System.out.println("nrOfEpochs: " + nrOfEpochs);
-
-		ArrayList<Integer> popularity = new ArrayList<>();
-		int[] centralities = new int[nrOfEpochs];
-		int epoch, timeNow = SimClock.getIntTime();
-		Map<Integer, Set<DTNHost>> nodesCountedInEpoch =
-				new HashMap<Integer, Set<DTNHost>>();
-
-		for(int i = 0; i < nrOfEpochs; i++)
-			nodesCountedInEpoch.put(i, new HashSet<DTNHost>());
-
-		int epochControl=0;
-		for(Map.Entry<DTNHost, List<Duration>> entry : connHistory.entrySet())
-		{
-			DTNHost h = entry.getKey();
-			for(Duration d : entry.getValue())
-			{
-				int timePassed = (int)(timeNow - d.end);
-
-				if(timePassed > REPORT_TIME_WINDOW * nrOfEpochs)
-					break;
-				epoch = timePassed / REPORT_TIME_WINDOW;
-				if(epoch>epochControl)
-					epochControl=epoch;
-
-				Set<DTNHost> nodesAlreadyCounted = nodesCountedInEpoch.get(epoch);
-
-				if(nodesAlreadyCounted.contains(h))
-					continue;
-				centralities[epoch]++;
-				nodesAlreadyCounted.add(h);
-			}
-		}
-		for(int i = 0; i < nrOfEpochs; i++){
-			popularity.add(centralities[i]);
-		}
-
-		this.lastGlobalComputationTime = SimClock.getIntTime();
-
-		return popularity;
-	}
-
-//	public ArrayList<Integer> getGlobalPopularity(Map<DTNHost, List<Duration>> connHistory) {
-//		return popularity;
-//	}
-
-
-//	public ArrayList<Integer> getPopularity(Map<Integer, Set<DTNHost>> nodesCountedInEpoch) {
-//		ArrayList<Integer> popularity = new ArrayList<>();
-//		for (Map.Entry<Integer, Set<DTNHost>> entry : nodesCountedInEpoch.entrySet()) {
-//			popularity.add(entry.getValue().size());
-//		}
-//		return popularity;
-//	}
-//
-//	public ArrayList<Integer> getGlobalPopularity(Map<DTNHost, List<Duration>> connHistory)
-//	{
-//		System.out.println("MASUK");
-//		int epoch, timeNow = SimClock.getIntTime();
-//		Map<Integer, Set<DTNHost>> nodesCountedInEpoch = new LinkedHashMap<>();
-//
-//		int nrOfEpochs = (int) SimScenario.getInstance().getEndTime() / REPORT_TIME_WINDOW;
-//		System.out.println("nrOfEpochs: " + nrOfEpochs);
-//
-//		for(int i = 0; i < nrOfEpochs; i++) {
-//			nodesCountedInEpoch.put(i, new HashSet<DTNHost>());
-//		}
-//
-//		int epochControl=0;
-//		for(Map.Entry<DTNHost, List<Duration>> entry : connHistory.entrySet())
-//		{
-//			DTNHost h = entry.getKey();
-//			for(Duration d : entry.getValue())
-//			{
-//				int timePassed = (int)(timeNow - d.end);
-//
-//				if(timePassed > REPORT_TIME_WINDOW * nrOfEpochs)
-//					break;
-//
-//				epoch = timePassed / REPORT_TIME_WINDOW;
-//				if(epoch>epochControl)
-//					epochControl=epoch;
-//
-//				Set<DTNHost> nodesAlreadyCounted = nodesCountedInEpoch.get(epoch);
-//
-//				if(nodesAlreadyCounted.contains(h))
-//					continue;
-//
-//				nodesAlreadyCounted.add(h);
-//
-//				nodesCountedInEpoch.put(epoch, nodesAlreadyCounted);
-//			}
-//		}
-//		return getPopularity(nodesCountedInEpoch);
-//	}
-
-//	public ArrayList<Integer> getGlobalPopularity(Map<DTNHost, List<Duration>> connHistory)
-//	{
-//		int nrOfEpochs = (int) SimScenario.getInstance().getEndTime() / REPORT_TIME_WINDOW;
-//		System.out.println("nrOfEpochs: " + nrOfEpochs);
-//
-//		ArrayList<Integer> popularity = new ArrayList<>();
-//		int[] centralities = new int[EPOCH_COUNT];
-//		int epoch, timeNow = SimClock.getIntTime();
-//		Map<Integer, Set<DTNHost>> nodesCountedInEpoch =
-//				new HashMap<Integer, Set<DTNHost>>();
-//
-//		for(int i = 0; i < EPOCH_COUNT; i++)
-//			nodesCountedInEpoch.put(i, new HashSet<DTNHost>());
-//
-//		int epochControl=0;
-//		for(Map.Entry<DTNHost, List<Duration>> entry : connHistory.entrySet())
-//		{
-//			DTNHost h = entry.getKey();
-//			for(Duration d : entry.getValue())
-//			{
-//				int timePassed = (int)(timeNow - d.end);
-//
-//				if(timePassed > CENTRALITY_TIME_WINDOW * EPOCH_COUNT)
-//					break;
-//				epoch = timePassed / CENTRALITY_TIME_WINDOW;
-//				if(epoch>epochControl)
-//					epochControl=epoch;
-//
-//				Set<DTNHost> nodesAlreadyCounted = nodesCountedInEpoch.get(epoch);
-//
-//				if(nodesAlreadyCounted.contains(h))
-//					continue;
-//				centralities[epoch]++;
-//				nodesAlreadyCounted.add(h);
-//			}
-//		}
-//		int control = 0, sum = 0;
-//		for(int i = 0; i < epochControl+1; i++){
-//			popularity.add(centralities[i]);
-//			sum += centralities[i];
-//			control++;
-//		}
-//
-//		this.lastGlobalComputationTime = SimClock.getIntTime();
-//
-//		return popularity;
-//	}
 }

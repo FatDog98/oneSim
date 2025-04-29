@@ -75,6 +75,11 @@ public class DegreeCentrality implements Centrality
 		return new DegreeCentrality(this);
 	}
 
+	@Override
+	public int[] getGlobal(Map<DTNHost, List<Duration>> connHistory) {
+		return new int[0];
+	}
+
 	public ArrayList<Integer> getGlobalPopularity(Map<DTNHost, List<Duration>> connHistory) {
 		return popularity;
 	}
